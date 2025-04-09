@@ -57,6 +57,10 @@ class TaskManager {
     
         void showTasks() {
             cout << "\nTask List:\n";
+            if(taskList.empty()){
+                cout << "Tidak ada task.\n";
+                return;
+            }
             for (const auto &task : taskList) {
                 cout << "- " << task.name << " (" << task.assignee << ", Deadline: " << task.deadline << ", Status: " << task.status << ")\n";
             }
@@ -84,11 +88,14 @@ void printBanner() {
       |_|\__,_|___/_|\_\ |_|  |_|\__,_|_| |_|\__,_|\__, |\___|_|   
                                                    |___/           
 )";
-    cout << "========================================================================\n";
+    cout << "========================================================================\n\n";
+}
+
+void printSeparator(){
+    cout << "------------------------------------------------------------------------\n";
 }
 
 void welcome(){
-    printBanner();
     cout << "[1] Tambah Task\n";
     cout << "[2] Undo Task Terakhir\n";
     cout << "[3] Sort Tasks berdasarkan Deadline\n";
@@ -102,18 +109,29 @@ void welcome(){
 
 int main() {
     TaskManager manager;
+    printBanner();
     welcome();
 
     int option;
 
-    while(true){
+    bool isRunning = true;
+
+    while(isRunning){
         cin >> option;
-        if(option == 0){
+
+        switch (option)
+        {
+        case 0:
+        {
             cls;
             cout << "Keluar Task Manager!\n";
+            isRunning = false;
             break;
-        }else if(option == 1){
+        }
+        case 1:
+        {
             cls;
+            printBanner();
             cout << "TAMBAH TASK\n";
             string name, assignee, deadline;
             cout << "Masukkan nama tugas: ";
@@ -125,27 +143,47 @@ int main() {
             getline(cin, deadline);
             manager.addTask(name, assignee, deadline);
             cout << "\n";
+            printSeparator();
             welcome();
-        }else if(option == 2){
+            break;
+        }
+        case 2:
+        {
             cls;
+            printBanner();
             cout << "UNDO TASK TERAKHIR\n";
             manager.undoLastTask();
             cout << "\n";
+            printSeparator();
             welcome();
-        }else if(option == 3){
+            break;
+        }
+        case 3:
+        {
             cls;
+            printBanner();
             cout << "SORT TASKS BERDASARKAN DEADLINE\n";
             manager.sortTasks();
             cout << "\n";
+            printSeparator();
             welcome();
-        }else if(option == 4){
+            break;
+        }
+        case 4:
+        {
             cls;
+            printBanner();
             cout << "TAMPILKAN TASKS\n";
             manager.showTasks();
             cout << "\n";
+            printSeparator();
             welcome();
-        }else if(option == 5){
+            break;
+        }
+        case 5:
+        {
             cls;
+            printBanner();
             cout << "SELESAIKAN TASK\n\n";
             string taskName;
             cout << "Masukkan nama task yang telah diselesaikan: ";
@@ -153,17 +191,37 @@ int main() {
             getline(cin, taskName);
             manager.completeTask(taskName);
             cout << "\n";
+            printSeparator();
             welcome();
-        } else if(option == 6){
+            break;
+        }
+        case 6:
+        {
             cls;
+            printBanner();
             cout << "IMPORT TASKS DARI FILE\n";
             cout << "\n";
+            printSeparator();
             welcome();
-        } else if(option == 7){
+            break;
+        }
+        case 7:
+        {
             cls;
+            printBanner();
             cout << "EXPORT TASKS KE FILE\n";
             cout << "\n";
+            printSeparator();
             welcome();
+            break;
+        }
+        default:
+        {
+            cout << "Pilihan tidak valid. Silakan coba lagi.\n";
+            printSeparator();
+            welcome();
+            break;
+        }
         }
     }
     
