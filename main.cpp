@@ -216,7 +216,7 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "IMPORT TASKS DARI FILE\n";
+            cout << "IMPORT TASKS DARI FILE (Belum di implementasi)\n";
             cout << "\n";
             printSeparator();
             welcome();
@@ -226,7 +226,7 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "EXPORT TASKS KE FILE\n";
+            cout << "EXPORT TASKS KE FILE (Belum di implementasi)\n";
             cout << "\n";
             printSeparator();
             welcome();
