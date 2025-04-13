@@ -24,6 +24,18 @@ bool checkTaskToRemove(Task task, Task ref){
     return task.name == ref.name && task.assignee == ref.assignee && task.deadline == ref.deadline && task.status == ref.status;
 }
 
+bool checkDeadline(string dl){
+    if(dl.length() != 10){
+        return false;
+    }
+    string year = dl.substr(0, 4);
+    string month = dl.substr(5, 2);
+    string day = dl.substr(8, 2);
+    if (year.length() != 4 || month.length() != 2 || day.length() != 2 || stoi(month) > 12 || stoi(day) > 31) {
+        return false;
+    }return true;
+}
+
 class TaskManager {
     private:
         queue<Task> taskQueue;
@@ -141,8 +153,13 @@ int main() {
             getline(cin, assignee);
             cout << "Masukkan Deadline task menggunakan format (yyyy-mm-dd): ";
             getline(cin, deadline);
-            manager.addTask(name, assignee, deadline);
-            cout << "\n";
+            
+            if(checkDeadline(deadline)){
+                manager.addTask(name, assignee, deadline);
+                cout << "\n";
+            }else {
+                cout << "Format tanggal tidak valid. Harap masukkan dalam format (yyyy-mm-dd).\n";
+            }
             printSeparator();
             welcome();
             break;
