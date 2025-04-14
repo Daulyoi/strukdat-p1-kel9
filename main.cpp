@@ -8,6 +8,19 @@
 
 using namespace std;
 
+#define RESET "\033[0m"
+#define BLACK "\033[0;1m"
+#define DARK_RED "\033[0;31m"
+#define RED "\033[31;1m"
+#define DARK_GREEN "\033[0;32m"
+#define GREEN "\033[32;1m"
+#define DARK_YELLOW "\033[0;33m"
+#define YELLOW "\033[33;1m"
+#define BLUE "\033[34;1m"
+#define MAGENTA "\033[35;1m"
+#define CYAN "\033[36;1m"
+#define WHITE "\033[37;1m"
+
 struct Task {
     string name;
     string assignee;
@@ -91,8 +104,8 @@ class TaskManager {
     };
 
 void printBanner() {
-    cout << "========================================================================\n";
-    cout << R"(
+    cout << CYAN << "========================================================================\n";
+    cout << YELLOW << R"(
      _____         _      __  __                                   
     |_   _|_ _ ___| | __ |  \/  | __ _ _ __   __ _  __ _  ___ _ __ 
       | |/ _` / __| |/ / | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
@@ -100,11 +113,14 @@ void printBanner() {
       |_|\__,_|___/_|\_\ |_|  |_|\__,_|_| |_|\__,_|\__, |\___|_|   
                                                    |___/           
 )";
-    cout << "========================================================================\n\n";
+    cout << CYAN << "========================================================================\n\n";
+    cout << RESET;
 }
 
 void printSeparator(){
+    cout << RED;  
     cout << "------------------------------------------------------------------------\n";
+    cout << WHITE;
 }
 
 void welcome(){
