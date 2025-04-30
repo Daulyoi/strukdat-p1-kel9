@@ -21,158 +21,6 @@ using namespace std;
 #define CYAN "\033[36;1m"
 #define WHITE "\033[37;1m"
 
-
-
-// Stack
-// StackNode structure
-struct StackNode {
-    Task data;
-    StackNode* next;
-};
-
-// Stack class
-class Stack {
-private:
-    StackNode* top;
-
-public:
-    Stack() {
-        top = nullptr;
-    }
-
-    // Push operation
-    void push(Task value) {
-        StackNode* newStackNode = new StackNode(); 
-        newStackNode->data = value;
-        newStackNode->next = top;     
-        top = newStackNode;
-    }
-
-    // Pop operation
-    void pop() {
-        if (isEmpty()) {
-            cout << "Stack Underflow. Nothing to pop.\n";
-            return;
-        }
-        StackNode* temp = top;
-        top = top->next;
-        cout << "Popped: " << temp->data.name << endl;
-        delete temp;
-    }
-
-    // Peek operation (view top element)
-    void peek() {
-        if (isEmpty()) {
-            cout << "Stack is empty.\n";
-            return;
-        }
-        cout << "Top : " << top->data.name << endl;
-    }
-
-    // Check if the stack is empty
-    bool isEmpty() {
-        return top == nullptr;
-    }
-
-    // Display stack elements
-    void display() {
-        StackNode* current = top;
-        if (isEmpty()) {
-            cout << "Stack is empty.\n";
-            return;
-        }
-        cout << "Stack elements: ";
-        while (current != nullptr) {
-            cout << current->data.name << " ";
-            current = current->next;
-        }
-        cout << endl;
-    }
-
-    // Destructor 
-    ~Stack() {
-        while (!isEmpty()) {
-            pop();
-        }
-    }
-};
-
-// Queue
-// QueueNode structure
-struct QueueNode {
-    Task data;
-    QueueNode* next;
-};
-
-// Queue class
-class Queue {
-private:
-    QueueNode* front;
-    QueueNode* rear;
-
-public:
-    Queue() {
-        front = rear = nullptr;
-    }
-
-    // Enqueue operation (insert at rear)
-    void enqueue(Task value) {
-        QueueNode* newQueueNode = new QueueNode();
-        newQueueNode->data = value;
-        newQueueNode->next = nullptr;
-
-        if (rear == nullptr) {
-            front = rear = newQueueNode;
-        } else {
-            rear->next = newQueueNode;
-            rear = newQueueNode;
-        }
-
-        cout << value.name << " enqueued to queue.\n";
-    }
-
-    // Dequeue operation (remove from front)
-    void dequeue() {
-        if (front == nullptr) {
-            cout << "Queue is empty. Cannot dequeue.\n";
-            return;
-        }
-
-        QueueNode* temp = front;
-        front = front->next;
-
-        // If front becomes null, then rear should also be null
-        if (front == nullptr) {
-            rear = nullptr;
-        }
-
-        cout << temp->data.name << " dequeued from queue.\n";
-        delete temp;
-    }
-
-    // Display the queue
-    void display() {
-        QueueNode* temp = front;
-        if (!temp) {
-            cout << "Queue is empty.\n";
-            return;
-        }
-
-        cout << "Queue: ";
-        while (temp != nullptr) {
-            cout << temp->data.name << " ";
-            temp = temp->next;
-        }
-        cout << "\n";
-    }
-
-    ~Queue() {
-        while (front != nullptr) {
-            dequeue();
-        }
-    }
-};
-
 // Task 
 struct Task {
     string name;
@@ -200,6 +48,91 @@ bool checkDeadline(string dl){
         return false;
     }return true;
 }
+
+// Stack
+class TaskStack {
+    private:
+        struct Node {
+            Task data;
+            Node* next;
+            Node(Task t, Node* n = nullptr) : data(t), next(n) {}
+        };
+        Node* topNode;
+    
+    public:
+        TaskStack() : topNode(nullptr) {}
+    
+        void push(const Task &task) {
+            topNode = new Node(task, topNode);
+        }
+    
+        bool empty() {
+            return topNode == nullptr;
+        }
+    
+        void pop() {
+            if (topNode) {
+                Node* temp = topNode;
+                topNode = topNode->next;
+                delete temp;
+            }
+        }
+    
+        Task& top() {
+            if (!topNode) throw runtime_error("Stack is empty");
+            return topNode->data;
+        }
+    
+        ~TaskStack() {
+            while (!empty()) pop();
+        }
+    };
+    
+
+// Queue
+class TaskQueue {
+    private:
+        struct Node {
+            Task data;
+            Node* next;
+            Node(Task t) : data(t), next(nullptr) {}
+        };
+        Node *front, *rear;
+    public:
+        TaskQueue() : front(nullptr), rear(nullptr) {}
+    
+        void push(const Task &task) {
+            Node* newNode = new Node(task);
+            if (!rear) {
+                front = rear = newNode;
+            } else {
+                rear->next = newNode;
+                rear = newNode;
+            }
+        }
+    
+        bool empty() {
+            return front == nullptr;
+        }
+    
+        void pop() {
+            if (!front) return;
+            Node* temp = front;
+            front = front->next;
+            if (!front) rear = nullptr;
+            delete temp;
+        }
+    
+        Task& frontTask() {
+            if (!front) throw runtime_error("Queue is empty");
+            return front->data;
+        }
+    
+        ~TaskQueue() {
+            while (!empty()) pop();
+        }
+    };
+    
 
 class TaskManager {
     private:
