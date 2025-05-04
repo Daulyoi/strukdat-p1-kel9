@@ -243,7 +243,6 @@ class TaskManager {
             TaskQueue tempQueue = TQ;
 
             if(tempQueue.empty()){
-                cout << "Tidak ada task.\n";
                 return;
             }
 
@@ -273,10 +272,11 @@ class TaskManager {
         }
 
         //The TaskManager::undoLastAction method attempts to undo the last action performed on the task manager by analyzing the type of operation (e.g., add, delete, complete, import, export) stored in the undo stack and reverting its effects accordingly. If the undo stack is empty or the operation type is unsupported, it provides appropriate feedback and returns false.
-        bool undoLastAction() {
+        void undoLastAction() {
             if (US.empty()) {
                 cout << "Tidak ada task untuk di-undo.\n";
-                return false;
+                // return false;
+                return;
             }
 
             Action lastAction = US.top();
@@ -312,17 +312,20 @@ class TaskManager {
                 
                     if (!taskRemoved) {
                         cout << "Task tidak ditemukan untuk dihapus.\n";
-                        return false;
+                        // return false;
+                        return;
                     }
                 
-                    return true;
+                    // return true;
+                    return;
                 }
                 break;                
             
             case Operation::DELETE:
                 TQ.push(lastAction.task);
                 cout << "Task ditambahkan kembali: " << lastAction.task.name << "\n";
-                return true;
+                // return true;
+                return;
                 break;
 
             case Operation::COMPLETE:
@@ -334,23 +337,27 @@ class TaskManager {
                     currentTask.status = "Belum Selesai";
                     TQ.push(currentTask);
                     cout << "Task ditandai sebagai belum selesai: " << currentTask.name << "\n";
-                    return true;
+                    // return true;
+                    return;
                 }
             }
             break;
 
             case Operation::IMPORT:
                 cout << "Fitur Import belum di implementasi.\n";
-                return true;
+                // return true;
+                return;
                 break;
 
             case Operation::EXPORT:
                 cout << "Fitur Export belum di implementasi.\n";
-                return true;
+                // return true;
+                return;
                 break;
 
             default:
-                return false;
+                // return false;
+                return;
                 break;
             }
         }
@@ -465,6 +472,8 @@ int main() {
         {
             cls;
             printBanner();
+            cout << "DAFTAR TASK\n";
+            manager.showTasks();
             cout << "SELESAIKAN TASK\n\n";
             string taskName;
             cout << "Masukkan nama task yang telah diselesaikan: ";
