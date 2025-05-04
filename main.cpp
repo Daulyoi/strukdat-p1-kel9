@@ -23,18 +23,40 @@ using namespace std;
 
 // Task 
 struct Task {
+    int id;
     string name;
-    string assignee;
     string deadline;
     string status;
+
+    // Task Constructor
+    Task(int _id, const string &_name, const string &_deadline, const string &_status) : id(_id), name(_name), deadline(_deadline), status(_status) {}
 };
 
+
+// Macam macam Operasi : Add, Delete, Complete, Import, Export
+enum class Operation {
+    ADD,
+    DELETE,
+    COMPLETE,
+    IMPORT,
+    EXPORT
+};
+
+// Struct action untuk menyimpan operasi yang dilakukan
+struct Action {
+    Operation type;
+    Task task;
+    
+    Action(Operation _type, const Task& _task) : type(_type), task(_task) {}
+};
+
+// Helper Functions
 bool compareByDeadline(const Task &a, const Task &b) {
     return a.deadline < b.deadline;
 }
 
 bool checkTaskToRemove(Task task, Task ref){
-    return task.name == ref.name && task.assignee == ref.assignee && task.deadline == ref.deadline && task.status == ref.status;
+    return task.name == ref.name && task.deadline == ref.deadline && task.status == ref.status;
 }
 
 bool checkDeadline(string dl){
@@ -53,17 +75,17 @@ bool checkDeadline(string dl){
 class TaskStack {
     private:
         struct Node {
-            Task data;
+            Action ac;
             Node* next;
-            Node(Task t, Node* n = nullptr) : data(t), next(n) {}
+            Node(Action action, Node* n = nullptr) : ac(action), next(n) {}
         };
         Node* topNode;
     
     public:
         TaskStack() : topNode(nullptr) {}
     
-        void push(const Task &task) {
-            topNode = new Node(task, topNode);
+        void push(Action action) {
+            topNode = new Node(action, topNode);
         }
     
         bool empty() {
@@ -78,9 +100,9 @@ class TaskStack {
             }
         }
     
-        Task& top() {
+        Action& top() {
             if (!topNode) throw runtime_error("Stack is empty");
-            return topNode->data;
+            return topNode->ac;
         }
     
         ~TaskStack() {
@@ -88,7 +110,6 @@ class TaskStack {
         }
     };
     
-
 // Queue
 class TaskQueue {
     private:
@@ -98,9 +119,40 @@ class TaskQueue {
             Node(Task t) : data(t), next(nullptr) {}
         };
         Node *front, *rear;
+
+        // Helper to deep copy from another TaskQueue
+        void copyFrom(const TaskQueue& other) {
+            Node* current = other.front;
+            while (current) {
+                push(current->data);
+                current = current->next;
+            }
+        }
+
+        // Helper to delete all nodes
+        void clear() {
+            while (!empty()) {
+                pop();
+            }
+        }
+
     public:
         TaskQueue() : front(nullptr), rear(nullptr) {}
-    
+
+        // Deep Copy Constructor
+        TaskQueue(const TaskQueue& other) : front(nullptr), rear(nullptr) {
+            copyFrom(other);
+        }
+
+        // Assignment Operator
+        TaskQueue& operator=(const TaskQueue& other) {
+            if (this != &other) {
+                clear(); // Clear existing data
+                copyFrom(other); // Copy data from the other queue
+            }
+            return *this;
+        }
+
         void push(const Task &task) {
             Node* newNode = new Node(task);
             if (!rear) {
@@ -124,67 +176,183 @@ class TaskQueue {
         }
     
         Task& frontTask() {
-            if (!front) throw runtime_error("Queue is empty");
-            return front->data;
+            if (!front) {
+                throw runtime_error("Queue is empty. No valid task to return.");
+            } else {
+                return front->data;
+            }
         }
     
         ~TaskQueue() {
-            while (!empty()) pop();
+            clear();
         }
     };
     
-
 class TaskManager {
     private:
-        queue<Task> taskQueue;
-        stack<Task> undoStack;
-        vector<Task> taskList;
-    
+        int id;
+        TaskQueue TQ;
+        TaskStack US;
+        
     public:
-        void addTask(const string &name, const string &assignee, const string &deadline, const string &status = "Belum Selesai") {
-            Task newTask = {name, assignee, deadline, status};
-            taskQueue.push(newTask);
-            taskList.push_back(newTask);
-            undoStack.push(newTask);
-            cout << "Task ditambahkan: " << name << " ditugaskan ke " << assignee << " (Deadline: " << deadline << ", Status: " << status << ")\n";
+        TaskManager() : id(0) {}
+
+        void addTask(const string &name, const string &deadline, const string &status = "Belum Selesai") {
+            Task newTask(id++, name, deadline, status);
+            TQ.push(newTask);
+
+            US.push(Action(Operation::ADD, newTask));
+
+            cout << "Task ditambahkan: " << name << " (Deadline: " << deadline << ", Status: " << status << ")\n";
         }
     
-        void undoLastTask() {
-            if (!undoStack.empty()) {
-                Task lastTask = undoStack.top();
-                undoStack.pop();
-                taskList.erase(remove_if(taskList.begin(), taskList.end(), [&](const Task task){return checkTaskToRemove(task, lastTask);}), taskList.end());
-                cout << "Task terbaru telah di-undo: " << lastTask.name << "\n";
-            } else {
-                cout << "Tidak ada task untuk di-undo.\n";
+        bool removeTask(const string &taskName) {
+            TaskQueue tempQueue;
+            bool found = false;
+    
+            while (!TQ.empty()) {
+                Task currentTask = TQ.frontTask();
+                TQ.pop();
+    
+                if (currentTask.name == taskName && !found) {
+                    found = true;
+                    US.push(Action(Operation::DELETE, currentTask));
+                    cout << "Task dihapus: " << currentTask.name << "\n";
+                } else {
+                    tempQueue.push(currentTask);
+                }
             }
-        }
+
+            // Restore the remaining tasks back to the original queue
+            while (!tempQueue.empty()) {
+                TQ.push(tempQueue.frontTask());
+                tempQueue.pop();
+            }
     
-        void sortTasks() {
-            sort(taskList.begin(), taskList.end(), compareByDeadline);
-            cout << "Tasks telah disortir berdasarkan deadline.\n";
+            if (!found) {
+                cout << "Task tidak ditemukan: " << taskName << "\n";
+            }
+            return found;
+        }
+
+        void showSortedTasks() {
+            cout << "Menyusul";
         }
     
         void showTasks() {
-            cout << "\nTask List:\n";
-            if(taskList.empty()){
+            TaskQueue tempQueue = TQ;
+
+            if(tempQueue.empty()){
                 cout << "Tidak ada task.\n";
                 return;
             }
-            for (const auto &task : taskList) {
-                cout << "- " << task.name << " (" << task.assignee << ", Deadline: " << task.deadline << ", Status: " << task.status << ")\n";
+
+            while (!tempQueue.empty()) {
+                Task currentTask = tempQueue.frontTask();
+                tempQueue.pop();
+                cout << "- " << currentTask.name << " (Deadline: " << currentTask.deadline << ", Status: " << currentTask.status << ")\n";
             }
         }
     
-        void completeTask(const string &taskName) {
-            for (auto &task : taskList) {
-                if (task.name == taskName) {
-                    task.status = "Selesai";
-                    cout << "Task telah selesai: " << task.name << "\n";
-                    return;
+        bool completeTask(const string &taskName) {
+            while (!TQ.empty()) {
+                Task currentTask = TQ.frontTask();
+                TQ.pop();
+                
+                if (currentTask.name == taskName) {
+                    currentTask.status = "Selesai";
+                    US.push(Action(Operation::COMPLETE, currentTask));
+                    cout << "Task telah selesai: " << currentTask.name << "\n";
+                    return true;
+                } else {
+                    TQ.push(currentTask);
                 }
             }
             cout << "Task tidak ditemukan: " << taskName << "\n";
+            return false;
+        }
+
+        //The TaskManager::undoLastAction method attempts to undo the last action performed on the task manager by analyzing the type of operation (e.g., add, delete, complete, import, export) stored in the undo stack and reverting its effects accordingly. If the undo stack is empty or the operation type is unsupported, it provides appropriate feedback and returns false.
+        bool undoLastAction() {
+            if (US.empty()) {
+                cout << "Tidak ada task untuk di-undo.\n";
+                return false;
+            }
+
+            Action lastAction = US.top();
+            US.pop();
+
+            switch (lastAction.type) 
+            {
+                case Operation::ADD:
+                {
+                    TaskQueue tempQueue;
+                    bool taskRemoved = false;
+                
+                    while (!TQ.empty()) {
+                        Task currentTask = TQ.frontTask();
+                        TQ.pop();
+                
+                        // Check for the task to be removed
+                        if (!taskRemoved &&
+                            currentTask.id == lastAction.task.id &&
+                            currentTask.deadline == lastAction.task.deadline) 
+                        {
+                            taskRemoved = true;
+                            cout << "Task telah dihapus: " << currentTask.name << "\n";
+                            continue; // Skip adding this task to the tempQueue
+                        }
+                
+                        // Keep all other tasks
+                        tempQueue.push(currentTask);
+                    }
+                
+                    // Restore the preserved tasks
+                    TQ = tempQueue;
+                
+                    if (!taskRemoved) {
+                        cout << "Task tidak ditemukan untuk dihapus.\n";
+                        return false;
+                    }
+                
+                    return true;
+                }
+                break;                
+            
+            case Operation::DELETE:
+                TQ.push(lastAction.task);
+                cout << "Task ditambahkan kembali: " << lastAction.task.name << "\n";
+                return true;
+                break;
+
+            case Operation::COMPLETE:
+            while (!TQ.empty()) {
+                Task currentTask = TQ.frontTask();
+                TQ.pop();
+                
+                if (currentTask.id == lastAction.task.id && currentTask.deadline == lastAction.task.deadline) {
+                    currentTask.status = "Belum Selesai";
+                    TQ.push(currentTask);
+                    cout << "Task ditandai sebagai belum selesai: " << currentTask.name << "\n";
+                    return true;
+                }
+            }
+            break;
+
+            case Operation::IMPORT:
+                cout << "Fitur Import belum di implementasi.\n";
+                return true;
+                break;
+
+            case Operation::EXPORT:
+                cout << "Fitur Export belum di implementasi.\n";
+                return true;
+                break;
+
+            default:
+                return false;
+                break;
+            }
         }
     };
 
@@ -203,15 +371,15 @@ void printBanner() {
 }
 
 void printSeparator(){
-    cout << RED;  
+    cout << WHITE;  
     cout << "------------------------------------------------------------------------\n";
     cout << RESET;
 }
 
 void welcome(){
     cout << "[1] Tambah Task\n";
-    cout << "[2] Undo Task Terakhir\n";
-    cout << "[3] Sort Tasks berdasarkan Deadline\n";
+    cout << "[2] Undo Aksi Terakhir\n";
+    cout << "[3] Tampilkan Task berdasarkan Deadline\n";
     cout << "[4] Tampilkan Tasks\n";
     cout << "[5] Selesaikan Task\n";
     cout << "[6] Import Tasks dari File\n";
@@ -250,13 +418,11 @@ int main() {
             cout << "Masukkan nama tugas: ";
             cin.ignore(); 
             getline(cin, name);
-            cout << "Masukkan penerima tugas: ";
-            getline(cin, assignee);
             cout << "Masukkan Deadline task menggunakan format (yyyy-mm-dd): ";
             getline(cin, deadline);
             
             if(checkDeadline(deadline)){
-                manager.addTask(name, assignee, deadline);
+                manager.addTask(name, deadline);
                 cout << "\n";
             }else {
                 cout << "Format tanggal tidak valid. Harap masukkan dalam format (yyyy-mm-dd).\n";
@@ -270,7 +436,7 @@ int main() {
             cls;
             printBanner();
             cout << "UNDO TASK TERAKHIR\n";
-            manager.undoLastTask();
+            manager.undoLastAction();
             cout << "\n";
             printSeparator();
             welcome();
@@ -281,11 +447,8 @@ int main() {
             cls;
             printBanner();
             cout << "SORT TASKS BERDASARKAN DEADLINE\n";
-            manager.sortTasks();
-            cout << "\n";
-            printSeparator();
+            manager.showSortedTasks();
             welcome();
-            break;
         }
         case 4:
         {
