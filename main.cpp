@@ -75,6 +75,34 @@ bool checkDeadline(string dl){
     }return true;
 }
 
+// Caesar Cipher Encryption
+string enc_caesarCipher(const string& text, int shift) {
+    string result = "";
+    for (char c : text) {
+        if (isalpha(c)) {
+            char base = islower(c) ? 'a' : 'A';
+            result += char(int(base + (c - base + shift) % 26));
+        } else {
+            result += c + shift;
+        }
+    }
+    return result;
+}
+
+// Caesar Cipher Decryption
+string dec_caesarCipher(const string& text, int shift) {
+    string result = "";
+    for (char c : text) {
+        if (isalpha(c)) {
+            char base = islower(c) ? 'a' : 'A';
+            result += char(int(base + (c - base - shift + 26) % 26));
+        } else {
+            result += c - shift;;
+        }
+    }
+    return result;
+}
+
 // Linked List for sorting tasks
 class ListNode {
     public:
@@ -324,7 +352,7 @@ class TaskManager {
             return false;
         }
 
-        void importTasks(){
+        void importTasks(int key = 4) {
             ifstream file("tasks.txt");
             
             if (!file) {
@@ -332,14 +360,21 @@ class TaskManager {
                 return;
             }
 
+            string delimiter = ";";
+            char enc_delimiter = enc_caesarCipher(delimiter, 4)[0];
+
             string line;
             while (getline(file, line)) {
-                size_t firstDelim = line.find(';');
-                size_t secondDelim = line.find(';', firstDelim + 1);
+                size_t firstDelim = line.find(enc_delimiter);
+                size_t secondDelim = line.find(enc_delimiter, firstDelim + 1);
 
                 string name = line.substr(0, firstDelim);
                 string deadline = line.substr(firstDelim + 1, secondDelim - firstDelim - 1);
                 string status = line.substr(secondDelim + 1);
+
+                name = dec_caesarCipher(name, key);
+                deadline = dec_caesarCipher(deadline, key);
+                status = dec_caesarCipher(status, key);
 
                 checkDeadline(deadline);
                 if (status.empty()) {
@@ -356,7 +391,7 @@ class TaskManager {
             cout << "Tasks berhasil diimport dari file:\n";
         }
 
-        void exportTasks(){
+        void exportTasks(int shift = 4) {
             ofstream file("tasks.txt");
             if (!file) {
                 cout << "File tidak dapat dibuat.\n";
@@ -368,11 +403,19 @@ class TaskManager {
                 return;
             }
 
+            string delimiter = ";";
+            char enc_delimiter = enc_caesarCipher(delimiter, 4)[0];
+
             TaskQueue tempQueue = TQ;
             while (!tempQueue.empty()) {
                 Task currentTask = tempQueue.frontTask();
                 tempQueue.pop();
-                file << currentTask.name << ";" << currentTask.deadline << ";" << currentTask.status << "\n";
+                
+                currentTask.name = enc_caesarCipher(currentTask.name, shift);
+                currentTask.deadline = enc_caesarCipher(currentTask.deadline, shift);
+                currentTask.status = enc_caesarCipher(currentTask.status, shift);
+
+                file << currentTask.name << enc_delimiter << currentTask.deadline << enc_delimiter << currentTask.status << "\n";
             }
             cout << "Tasks berhasil diekspor ke file tasks.txt\n";
         }
@@ -605,7 +648,10 @@ int main() {
             cls;
             printBanner();
             cout << "IMPORT TASKS DARI FILE\n";
-            manager.importTasks();
+            cout << "Key: ";
+            int key;
+            cin >> key;
+            manager.importTasks(key);
             manager.showTasks();
             cout << "\n";
             printSeparator();
@@ -617,7 +663,10 @@ int main() {
             cls;
             printBanner();
             cout << "EXPORT TASKS KE FILE\n";
-            manager.exportTasks();
+            cout << "Masukkan Key untuk Enkripsi (0-25): ";
+            int key;
+            cin >> key;
+            manager.exportTasks(key);
             cout << "\n";
             printSeparator();
             welcome();
