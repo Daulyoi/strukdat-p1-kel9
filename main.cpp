@@ -51,14 +51,18 @@ struct Action {
 };
 
 // Helper Functions
+// Returns the deadline of a < b as a boolean
 bool compareByDeadline(const Task &a, const Task &b) {
     return a.deadline < b.deadline;
 }
 
+// Check if task is the same as reference task
 bool checkTaskToRemove(Task task, Task ref){
     return task.name == ref.name && task.deadline == ref.deadline && task.status == ref.status;
 }
 
+// Check if deadline is valid
+// Format: yyyy-mm-dd
 bool checkDeadline(string dl){
     if(dl.length() != 10){
         return false;
@@ -70,6 +74,34 @@ bool checkDeadline(string dl){
         return false;
     }return true;
 }
+
+// Linked List for sorting tasks
+class ListNode {
+    public:
+    Task task;
+    ListNode* next;
+    ListNode(const Task& t) : task(t), next(nullptr){};
+};
+
+// Insertion sort for sorting tasks in the Linked List
+void insertToSortedList(ListNode*& head, Task newTask){
+    ListNode* newNode = new ListNode(newTask);
+
+    if (!head || compareByDeadline(newTask, head->task)) {
+        newNode->next = head;
+        head = newNode;
+        return;
+    }
+
+    ListNode* current = head;
+    while (current->next && !compareByDeadline(newTask, current->next->task)) {
+        current = current->next;
+    }
+
+    newNode->next = current->next;
+    current->next = newNode;
+}
+
 
 // Stack
 class TaskStack {
@@ -236,13 +268,34 @@ class TaskManager {
         }
 
         void showSortedTasks() {
-            cout << "Menyusul";
+            TaskQueue tempQueue = TQ;
+            ListNode* head = nullptr;
+        
+            if(tempQueue.empty()){
+                cout << "Tidak ada task\n";
+                return;
+            }
+
+            while (!tempQueue.empty()) {
+                insertToSortedList(head, tempQueue.frontTask());
+                tempQueue.pop();
+            }
+        
+            ListNode* current = head;
+            while (current) {
+                Task& task = current->task;
+                cout << "- " << task.name << " (Deadline: " << task.deadline << ", Status: " << task.status << ")\n";
+                ListNode* toDelete = current;
+                current = current->next;
+                delete toDelete; // clean up memory
+            }
         }
     
         void showTasks() {
             TaskQueue tempQueue = TQ;
 
             if(tempQueue.empty()){
+                cout << "Tidak ada task\n";
                 return;
             }
 
@@ -271,6 +324,59 @@ class TaskManager {
             return false;
         }
 
+        void importTasks(){
+            ifstream file("tasks.txt");
+            
+            if (!file) {
+                cout << "File tidak ditemukan.\n";
+                return;
+            }
+
+            string line;
+            while (getline(file, line)) {
+                size_t firstDelim = line.find(';');
+                size_t secondDelim = line.find(';', firstDelim + 1);
+
+                string name = line.substr(0, firstDelim);
+                string deadline = line.substr(firstDelim + 1, secondDelim - firstDelim - 1);
+                string status = line.substr(secondDelim + 1);
+
+                checkDeadline(deadline);
+                if (status.empty()) {
+                    status = "Belum Selesai";
+                }
+
+                if(status == "Selesai"){
+                    continue;
+                }
+
+                Task newTask(id++, name, deadline, status);
+                TQ.push(newTask);
+            }
+            cout << "Tasks berhasil diimport dari file:\n";
+        }
+
+        void exportTasks(){
+            ofstream file("tasks.txt");
+            if (!file) {
+                cout << "File tidak dapat dibuat.\n";
+                return;
+            }
+
+            if(TQ.empty()){
+                cout << "Tidak ada task untuk di export.\n";
+                return;
+            }
+
+            TaskQueue tempQueue = TQ;
+            while (!tempQueue.empty()) {
+                Task currentTask = tempQueue.frontTask();
+                tempQueue.pop();
+                file << currentTask.name << ";" << currentTask.deadline << ";" << currentTask.status << "\n";
+            }
+            cout << "Tasks berhasil diekspor ke file tasks.txt\n";
+        }
+
         //The TaskManager::undoLastAction method attempts to undo the last action performed on the task manager by analyzing the type of operation (e.g., add, delete, complete, import, export) stored in the undo stack and reverting its effects accordingly. If the undo stack is empty or the operation type is unsupported, it provides appropriate feedback and returns false.
         void undoLastAction() {
             if (US.empty()) {
@@ -284,7 +390,7 @@ class TaskManager {
 
             switch (lastAction.type) 
             {
-                case Operation::ADD:
+                case Operation::ADD :
                 {
                     TaskQueue tempQueue;
                     bool taskRemoved = false;
@@ -318,47 +424,53 @@ class TaskManager {
                 
                     // return true;
                     return;
+                    break;                
                 }
-                break;                
             
-            case Operation::DELETE:
+            case Operation::DELETE: {
                 TQ.push(lastAction.task);
                 cout << "Task ditambahkan kembali: " << lastAction.task.name << "\n";
                 // return true;
                 return;
                 break;
-
-            case Operation::COMPLETE:
-            while (!TQ.empty()) {
-                Task currentTask = TQ.frontTask();
-                TQ.pop();
-                
-                if (currentTask.id == lastAction.task.id && currentTask.deadline == lastAction.task.deadline) {
-                    currentTask.status = "Belum Selesai";
-                    TQ.push(currentTask);
-                    cout << "Task ditandai sebagai belum selesai: " << currentTask.name << "\n";
-                    // return true;
-                    return;
-                }
             }
-            break;
 
-            case Operation::IMPORT:
-                cout << "Fitur Import belum di implementasi.\n";
-                // return true;
+            case Operation::COMPLETE: {
+                while (!TQ.empty()) {
+                    Task currentTask = TQ.frontTask();
+                    TQ.pop();
+                    
+                    if (currentTask.id == lastAction.task.id && currentTask.deadline == lastAction.task.deadline) {
+                        currentTask.status = "Belum Selesai";
+                        TQ.push(currentTask);
+                        cout << "Task ditandai sebagai belum selesai: " << currentTask.name << "\n";
+                        // return true;
+                        return;
+                    }
+                }
+                break;
+            }
+                
+            case Operation::IMPORT: {
+                TQ.empty();
                 return;
                 break;
+            }
 
-            case Operation::EXPORT:
+            case Operation::EXPORT: {
+
                 cout << "Fitur Export belum di implementasi.\n";
                 // return true;
                 return;
                 break;
+            }
+                
+            default:{
 
-            default:
                 // return false;
                 return;
                 break;
+                }
             }
         }
     };
@@ -421,7 +533,7 @@ int main() {
             cls;
             printBanner();
             cout << "TAMBAH TASK\n";
-            string name, assignee, deadline;
+            string name, deadline;
             cout << "Masukkan nama tugas: ";
             cin.ignore(); 
             getline(cin, name);
@@ -455,7 +567,10 @@ int main() {
             printBanner();
             cout << "SORT TASKS BERDASARKAN DEADLINE\n";
             manager.showSortedTasks();
+            cout << "\n";
+            printSeparator();
             welcome();
+            break;
         }
         case 4:
         {
@@ -489,7 +604,9 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "IMPORT TASKS DARI FILE (Belum di implementasi)\n";
+            cout << "IMPORT TASKS DARI FILE\n";
+            manager.importTasks();
+            manager.showTasks();
             cout << "\n";
             printSeparator();
             welcome();
@@ -499,7 +616,8 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "EXPORT TASKS KE FILE (Belum di implementasi)\n";
+            cout << "EXPORT TASKS KE FILE\n";
+            manager.exportTasks();
             cout << "\n";
             printSeparator();
             welcome();
@@ -507,6 +625,8 @@ int main() {
         }
         default:
         {
+            cls;
+            printBanner();
             cout << "Pilihan tidak valid. Silakan coba lagi.\n";
             printSeparator();
             welcome();
