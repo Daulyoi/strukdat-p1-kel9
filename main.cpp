@@ -8,6 +8,8 @@
 
 using namespace std;
 
+// Colors
+// RESET, BLACK, DARK_RED, DARK_GREEN, GREEN, DARK_YELLOW, YELLOW, BLUE, MAGENTA, CYAN, WHITE
 #define RESET "\033[0m"
 #define BLACK "\033[0;1m"
 #define DARK_RED "\033[0;31m"
@@ -263,7 +265,7 @@ class TaskManager {
 
             US.push(Action(Operation::ADD, newTask));
 
-            cout << "Task ditambahkan: " << name << " (Deadline: " << deadline << ", Status: " << status << ")\n";
+            cout << GREEN << "Task ditambahkan: " << name << " (Deadline: " << deadline << ", Status: " << status << ")\n" << RESET;
         }
     
         bool removeTask(const string &taskName) {
@@ -277,7 +279,7 @@ class TaskManager {
                 if (currentTask.name == taskName && !found) {
                     found = true;
                     US.push(Action(Operation::DELETE, currentTask));
-                    cout << "Task dihapus: " << currentTask.name << "\n";
+                    cout << GREEN << "Task dihapus: " << currentTask.name << "\n" << RESET;
                 } else {
                     tempQueue.push(currentTask);
                 }
@@ -290,7 +292,7 @@ class TaskManager {
             }
     
             if (!found) {
-                cout << "Task tidak ditemukan: " << taskName << "\n";
+                cout << RED << "Task tidak ditemukan: " << taskName << "\n" << RESET;
             }
             return found;
         }
@@ -300,7 +302,7 @@ class TaskManager {
             ListNode* head = nullptr;
         
             if(tempQueue.empty()){
-                cout << "Tidak ada task\n";
+                cout << RED << "Tidak ada task\n" << RESET;
                 return;
             }
 
@@ -312,7 +314,7 @@ class TaskManager {
             ListNode* current = head;
             while (current) {
                 Task& task = current->task;
-                cout << "- " << task.name << " (Deadline: " << task.deadline << ", Status: " << task.status << ")\n";
+                cout << WHITE << "- " << task.name << " (Deadline: " << task.deadline << ", Status: " << task.status << ")\n" << RESET;
                 ListNode* toDelete = current;
                 current = current->next;
                 delete toDelete; // clean up memory
@@ -323,14 +325,14 @@ class TaskManager {
             TaskQueue tempQueue = TQ;
 
             if(tempQueue.empty()){
-                cout << "Tidak ada task\n";
+                cout << RED << "Tidak ada task\n" << RESET;
                 return;
             }
 
             while (!tempQueue.empty()) {
                 Task currentTask = tempQueue.frontTask();
                 tempQueue.pop();
-                cout << "- " << currentTask.name << " (Deadline: " << currentTask.deadline << ", Status: " << currentTask.status << ")\n";
+                cout << WHITE << "- " << currentTask.name << " (Deadline: " << currentTask.deadline << ", Status: " << currentTask.status << ")\n" << RESET;
             }
         }
     
@@ -420,6 +422,9 @@ class TaskManager {
             cout << "Tasks berhasil diekspor ke file tasks.txt\n";
         }
 
+        bool taskIsEmpty(){
+            return TQ.empty();
+        }
         //The TaskManager::undoLastAction method attempts to undo the last action performed on the task manager by analyzing the type of operation (e.g., add, delete, complete, import, export) stored in the undo stack and reverting its effects accordingly. If the undo stack is empty or the operation type is unsupported, it provides appropriate feedback and returns false.
         void undoLastAction() {
             if (US.empty()) {
@@ -547,7 +552,7 @@ void welcome(){
     cout << "[6] Import Tasks dari File\n";
     cout << "[7] Export Tasks ke File\n";
     cout << "[0] Exit\n";
-    cout << "Tolong pilih sebuah opsi: ";
+    cout << WHITE << "Tolong pilih sebuah opsi: " << RESET;
 }
 
 int main() {
@@ -575,19 +580,19 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "TAMBAH TASK\n";
+            cout << YELLOW << "TAMBAH TASK\n" << RESET;
             string name, deadline;
-            cout << "Masukkan nama tugas: ";
+            cout << WHITE << "Masukkan nama tugas: " << RESET;
             cin.ignore(); 
             getline(cin, name);
-            cout << "Masukkan Deadline task menggunakan format (yyyy-mm-dd): ";
+            cout << WHITE << "Masukkan Deadline task menggunakan format (yyyy-mm-dd): " << RESET;
             getline(cin, deadline);
             
             if(checkDeadline(deadline)){
                 manager.addTask(name, deadline);
                 cout << "\n";
             }else {
-                cout << "Format tanggal tidak valid. Harap masukkan dalam format (yyyy-mm-dd).\n";
+                cout << RED << "Format tanggal tidak valid. Harap masukkan dalam format (yyyy-mm-dd).\n" << RESET;
             }
             printSeparator();
             welcome();
@@ -597,7 +602,7 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "UNDO TASK TERAKHIR\n";
+            cout << YELLOW << "UNDO TASK TERAKHIR\n" << RESET;
             manager.undoLastAction();
             cout << "\n";
             printSeparator();
@@ -608,7 +613,7 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "SORT TASKS BERDASARKAN DEADLINE\n";
+            cout << YELLOW << "SORT TASKS BERDASARKAN DEADLINE\n" << RESET;
             manager.showSortedTasks();
             cout << "\n";
             printSeparator();
@@ -619,7 +624,7 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "TAMPILKAN TASKS\n";
+            cout << YELLOW << "TAMPILKAN TASKS\n" << RESET;
             manager.showTasks();
             cout << "\n";
             printSeparator();
@@ -630,15 +635,20 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "DAFTAR TASK\n";
-            manager.showTasks();
-            cout << "SELESAIKAN TASK\n\n";
-            string taskName;
-            cout << "Masukkan nama task yang telah diselesaikan: ";
-            cin.ignore();
-            getline(cin, taskName);
-            manager.completeTask(taskName);
-            cout << "\n";
+            if (manager.taskIsEmpty()){
+                cout << RED << "Tidak ada task!\n" << RESET;
+            } else if(!manager.taskIsEmpty()){
+                cout << YELLOW << "DAFTAR TASK\n" << RESET;
+                manager.showTasks();
+                cout << YELLOW <<  "SELESAIKAN TASK\n\n" << RESET;
+                string taskName;
+                cout << WHITE << "Masukkan nama task yang telah diselesaikan: " << RESET;
+                cin.ignore();
+                getline(cin, taskName);
+                manager.completeTask(taskName);
+                cout << "\n";
+            }
+
             printSeparator();
             welcome();
             break;
@@ -647,8 +657,8 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "IMPORT TASKS DARI FILE\n";
-            cout << "Key: ";
+            cout << YELLOW << "IMPORT TASKS DARI FILE\n" << RESET;
+            cout << MAGENTA << "Key: " << RESET;
             int key;
             cin >> key;
             manager.importTasks(key);
@@ -662,8 +672,8 @@ int main() {
         {
             cls;
             printBanner();
-            cout << "EXPORT TASKS KE FILE\n";
-            cout << "Masukkan Key untuk Enkripsi (0-25): ";
+            cout << YELLOW << "EXPORT TASKS KE FILE\n" << RESET;
+            cout << MAGENTA << "Masukkan Key untuk Enkripsi (0-25): " << RESET;
             int key;
             cin >> key;
             manager.exportTasks(key);
