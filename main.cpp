@@ -85,7 +85,7 @@ string enc_caesarCipher(const string& text, int shift) {
             char base = islower(c) ? 'a' : 'A';
             result += char(int(base + (c - base + shift) % 26));
         } else {
-            result += c + shift;
+            result += c;
         }
     }
     return result;
@@ -99,7 +99,7 @@ string dec_caesarCipher(const string& text, int shift) {
             char base = islower(c) ? 'a' : 'A';
             result += char(int(base + (c - base - shift + 26) % 26));
         } else {
-            result += c - shift;;
+            result += c;
         }
     }
     return result;
@@ -363,7 +363,7 @@ class TaskManager {
             }
 
             string delimiter = ";";
-            char enc_delimiter = enc_caesarCipher(delimiter, 4)[0];
+            char enc_delimiter = enc_caesarCipher(delimiter, key)[0];
 
             string line;
             while (getline(file, line)) {
@@ -393,7 +393,7 @@ class TaskManager {
             cout << "Tasks berhasil diimport dari file:\n";
         }
 
-        void exportTasks(int shift = 4) {
+        void exportTasks(int key = 4) {
             ofstream file("tasks.txt");
             if (!file) {
                 cout << "File tidak dapat dibuat.\n";
@@ -406,16 +406,16 @@ class TaskManager {
             }
 
             string delimiter = ";";
-            char enc_delimiter = enc_caesarCipher(delimiter, 4)[0];
+            char enc_delimiter = enc_caesarCipher(delimiter, key)[0];
 
             TaskQueue tempQueue = TQ;
             while (!tempQueue.empty()) {
                 Task currentTask = tempQueue.frontTask();
                 tempQueue.pop();
                 
-                currentTask.name = enc_caesarCipher(currentTask.name, shift);
-                currentTask.deadline = enc_caesarCipher(currentTask.deadline, shift);
-                currentTask.status = enc_caesarCipher(currentTask.status, shift);
+                currentTask.name = enc_caesarCipher(currentTask.name, key);
+                currentTask.deadline = enc_caesarCipher(currentTask.deadline, key);
+                currentTask.status = enc_caesarCipher(currentTask.status, key);
 
                 file << currentTask.name << enc_delimiter << currentTask.deadline << enc_delimiter << currentTask.status << "\n";
             }
